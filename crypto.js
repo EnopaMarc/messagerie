@@ -225,6 +225,16 @@ class CryptoManager {
   }
 
   /**
+   * Force la régénération de la clé (pour résoudre les problèmes de compatibilité)
+   */
+  async regenerateKey() {
+    this.key = null;
+    this.sharedKey = null;
+    this.keyGenerated = false;
+    return await this.generateKey();
+  }
+
+  /**
    * Nettoie les données sensibles de la mémoire
    */
   cleanup() {

@@ -236,6 +236,13 @@ class MessagingApp {
     audioManager.setRecordingCompleteCallback((audioBlob) => {
       this.sendVoiceMessage(audioBlob);
     });
+    
+    // Forcer la régénération de la clé pour résoudre les problèmes de compatibilité
+    if (cryptoManager.keyGenerated) {
+      cryptoManager.regenerateKey().then(() => {
+        console.log('Clé de chiffrement régénérée pour compatibilité audio');
+      });
+    }
   }
 
   /**
@@ -450,8 +457,9 @@ class MessagingApp {
         controls.appendChild(audio);
       } else {
         const errorMsg = document.createElement('span');
-        errorMsg.textContent = 'Message vocal non déchiffrable';
-        errorMsg.style.color = 'var(--text-muted)';
+        errorMsg.textContent = 'Message vocal non déchiffrable - Essayez de recharger la page';
+        errorMsg.style.color = 'var(--warning-color)';
+        errorMsg.style.fontSize = '0.9em';
         controls.appendChild(errorMsg);
       }
     }
