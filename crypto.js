@@ -7,23 +7,41 @@ class CryptoManager {
   constructor() {
     this.key = null;
     this.keyGenerated = false;
+    this.sharedKey = null;
   }
 
   /**
-   * Génère une clé de chiffrement AES-256
+   * Génère une clé de chiffrement AES-256 partagée
    */
   async generateKey() {
     try {
-      this.key = await crypto.subtle.generateKey(
+      // Utiliser une clé fixe pour tous les utilisateurs
+      // En production, cette clé devrait être générée côté serveur
+      const keyMaterial = new TextEncoder().encode('messagerie-securisee-2024');
+      this.key = await crypto.subtle.importKey(
+        'raw',
+        keyMaterial,
+        { name: 'PBKDF2' },
+        false,
+        ['deriveBits', 'deriveKey']
+      );
+      
+      // Dériver une clé AES
+      this.sharedKey = await crypto.subtle.deriveKey(
         {
-          name: 'AES-GCM',
-          length: 256
+          name: 'PBKDF2',
+          salt: new TextEncoder().encode('salt-securise'),
+          iterations: 100000,
+          hash: 'SHA-256'
         },
+        this.key,
+        { name: 'AES-GCM', length: 256 },
         true,
         ['encrypt', 'decrypt']
       );
+      
       this.keyGenerated = true;
-      console.log('Clé de chiffrement générée avec succès');
+      console.log('Clé de chiffrement partagée générée avec succès');
       return true;
     } catch (error) {
       console.error('Erreur lors de la génération de la clé:', error);
@@ -49,13 +67,13 @@ class CryptoManager {
       // Générer un vecteur d'initialisation (IV) aléatoire
       const iv = crypto.getRandomValues(new Uint8Array(12));
 
-      // Chiffrer les données
+      // Chiffrer les données avec la clé partagée
       const encryptedData = await crypto.subtle.encrypt(
         {
           name: 'AES-GCM',
           iv: iv
         },
-        this.key,
+        this.sharedKey,
         dataBuffer
       );
 
@@ -86,7 +104,7 @@ class CryptoManager {
           name: 'AES-GCM',
           iv: iv
         },
-        this.key,
+        this.sharedKey,
         encryptedData
       );
 
@@ -137,7 +155,7 @@ class CryptoManager {
           name: 'AES-GCM',
           iv: iv
         },
-        this.key,
+        this.sharedKey,
         encryptedData
       );
 
